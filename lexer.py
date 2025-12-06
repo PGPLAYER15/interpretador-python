@@ -10,15 +10,16 @@ def lexer(text):
     line_num = 1
     line_start = 0
 
-    token_spec = [
+    token_specs = [
         ('NUMBER', r'\d+'),
         ('PRINT',  r'\bprint\b'),
-        ('ID',     r'[A-Za-z_]\w*'),
 
         # operadores booleanos
         ('AND', r'\band\b'),
         ('OR', r'\bor\b'),
         ('NOT', r'\bnot\b'),
+
+        ('ID',     r'[A-Za-z_]\w*'),
 
         # operadores logicos
 
@@ -35,7 +36,7 @@ def lexer(text):
         ('PLUS',   r'\+'),
         ('MINUS',  r'-'),
         ('DIV', r'/'),
-        ('MULT', r'*'),
+        ('MULT', r'\*'),
 
         # Delimitadores
 
@@ -50,17 +51,19 @@ def lexer(text):
         ('SKIP',   r'[ \t]+'),
 
     ]
-    tok_regex = '|'.join(f'(?P<{name}>{pattern})' for name, pattern in token_spec)
-
+    tok_regex = '|'.join(f'(?P<{name}>{pattern})' for name, pattern in token_specs)
     for mo in re.finditer(tok_regex, text):
         kind = mo.lastgroup
         value = mo.group()
-
-        if kind in ('SKIP', 'COMMENT'):
+        if kind == 'NUMBER':
+            yield Token('NUMBER', value)
+        elif kind == 'ID':
+            yield Token('ID', value)
+        elif kind == 'NEWLINE':
+            yield Token('NEWLINE', value)
+        elif kind == 'SKIP':
             continue
-        if kind == 'MISMATCH':
-            raise SyntaxError(f'Carácter inesperado: {value}')
-        if kind == 'KEYWORD':
-            kind = value.upper()  # print -> PRINT
-
-        yield Token(kind, value)
+        elif kind == 'MISMATCH':
+            raise RuntimeError(f'Unexpected character: {value!r}')
+        else:
+            yield Token(kind, value)
